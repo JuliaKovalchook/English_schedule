@@ -55,33 +55,37 @@ def filter_bro(df0):
         df0=df0.explode('message') #if one message has several events, we separate them 
         df0.dropna(subset=['message'], inplace=True) #drop all rows wo information about event 
         df0=df0.reset_index(drop=True) 
+        if len(df0)>0:
 
 
-        '''
-        Change string with data to corect format
-        '''
+            '''
+            Change string with data to corect format
+            '''
 
-        df2=df0
-        df2['start_event']=df2['message'].str.extract('(\d+\.\d+)', expand=True)+'.2023 '+\
-                          df2['message'].str.extract('(\d+\:\d+)', expand=True)
-
-
-        #df2['start_event'] = df2["start_event"].apply(lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M').isoformat())
-        df2['start_event'] = df2["start_event"].apply(lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M')) #change to datatime
-        #df2= df2[df2['start_event'] >= pd.to_datetime('today')] 
-        df2['end_event'] = df2["start_event"].apply(lambda x: x + timedelta(hours=1)) #add 1 hours 
+            df2=df0
+            df2['start_event']=df2['message'].str.extract('(\d+\.\d+)', expand=True)+'.2023 '+\
+                              df2['message'].str.extract('(\d+\:\d+)', expand=True)
 
 
-         #get current dateTime
-        current_dateTime = pd.to_datetime('today')
+            #df2['start_event'] = df2["start_event"].apply(lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M').isoformat())
+            df2['start_event'] = df2["start_event"].apply(lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M')) #change to datatime
+            #df2= df2[df2['start_event'] >= pd.to_datetime('today')] 
+            df2['end_event'] = df2["start_event"].apply(lambda x: x + timedelta(hours=1)) #add 1 hours 
 
-        #filter by upcoming events only
-        df_upcoming= df2[df2['start_event'] >= current_dateTime].copy()
-       
-        df_upcoming['start_event'] = df_upcoming["start_event"].apply(lambda x: (x.tz_localize('Europe/Kyiv')).isoformat()) #change to isoformat
-        df_upcoming['end_event'] = df_upcoming["end_event"].apply(lambda x: (x.tz_localize('Europe/Kyiv')).isoformat())
-        df_upcoming['location']='Ukraine'
-        df_upcoming=df_upcoming[['event_name', 'description',  'start_event', 'end_event', 'location']]
+
+             #get current dateTime
+            current_dateTime = pd.to_datetime('today')
+
+            #filter by upcoming events only
+            df_upcoming= df2[df2['start_event'] >= current_dateTime].copy()
+           
+            df_upcoming['start_event'] = df_upcoming["start_event"].apply(lambda x: (x.tz_localize('Europe/Kyiv')).isoformat()) #change to isoformat
+            df_upcoming['end_event'] = df_upcoming["end_event"].apply(lambda x: (x.tz_localize('Europe/Kyiv')).isoformat())
+            df_upcoming['location']='Ukraine'
+            df_upcoming=df_upcoming[['event_name', 'description',  'start_event', 'end_event', 'location']]
+        else:
+            df_upcoming = pd.DataFrame(columns=['event_name', 'description', 'start_event','end_event','location'])
+
     else:
         df_upcoming = pd.DataFrame(columns=['event_name', 'description', 'start_event','end_event','location'])
     return df_upcoming
