@@ -51,27 +51,27 @@ def filter_smalltalks(df0):
     looking for "(16.09) о 12:00"  
     '''
     if len(df0)>0:
-        day_of_week_ukr=['понеділ', 'вівіторок', 'серед', 'четвер', 'субот', 'неділ']  #possible options for writing the day of the week
+        day_of_week_ukr=['понеділ', 'вівіторок', 'серед', 'четвер', 'п\'ятниця', 'субот', 'неділ']  #possible options for writing the day of the week
         pattern= r"\L<words>[а-я]*.*\d{1,2}[\.|:]\d{2}" 
         df0['message'] = df0['message'].apply(lambda x:  regex.findall(pattern, x, words=day_of_week_ukr))  #get {week_name}&{trash}&{time_event}
         df0=df0.explode('message') #if one message has several events, we separate them 
 
         df0.dropna(subset=['message'], inplace=True) #drop all rows wo information about event 
-        df0['name_week'] = df0['message'].apply(lambda x:  regex.findall(r"\L<words>", x, words=day_of_week_ukr)[0]) #get short {week_name} from list 
         df0=df0.reset_index(drop=True) 
 
         if len(df0)>0:
+            df0['name_week'] = df0['message'].apply(lambda x:  regex.findall(r"\L<words>", x, words=day_of_week_ukr)[0]) #get short {week_name} from list 
             df0['number_week']=df0['name_week'].apply(lambda x: day_of_week_ukr.index(x)) #get number of week
             df0['start_week']=df0['date'].apply(lambda x: (datetime.strptime(x.split(' ')[0], "%Y-%m-%d")) - timedelta(days=\
                                                            (datetime.strptime(x.split(' ')[0], "%Y-%m-%d")).weekday())) #start of week by date of post
 
             df0['start_event_date'] = df0[['start_week','number_week' ]]\
                                      .apply(lambda x:x['start_week'] + timedelta(days=x['number_week']), axis=1) # {date of post}+{number_week}
-            df0['time_event'] = df0['message'].apply(lambda x:  regex.findall(r"\d{2}:\d{2}", x)[0])
+            df0['time_event'] = df0['message'].apply(lambda x:  regex.findall(r"\d{1,2}[\.|:]\d{2}", x)[0])
             df0['start_event']=df0[['start_event_date','time_event' ]]\
                                      .apply(lambda x:x['start_event_date'] + timedelta(
-                                                hours=int(x['time_event'].split(':')[0]),
-                                                minutes=int(x['time_event'].split(':')[1])), axis=1) #start_event with date and time
+                                                hours=int(re.split(r'\.|:', x['time_event'])[0]),
+                                                minutes=int(re.split(r'\.|:', x['time_event'])[1])), axis=1) #start_event with date and time
             df0['end_event'] = df0["start_event"].apply(lambda x: x + timedelta(hours=1)) #add 1 hours 
 
             current_dateTime = pd.to_datetime('today')
